@@ -69,6 +69,14 @@ afterEach(() => {
 afterAll(() => server.close())
 
 describe('Pending Window', () => {
+  test('Todo item from API is shown', async () => {
+    render(<TestApp />)
+
+    await expect(
+      waitFor(() => screen.findByText(/Todo1/)),
+    ).resolves.toBeDefined()
+  })
+
   test('Adding items does correct API Call', async () => {
     const user = userEvent.setup()
     render(<TestApp />)
