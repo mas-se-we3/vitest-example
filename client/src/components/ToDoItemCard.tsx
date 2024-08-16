@@ -21,6 +21,7 @@ export const ToDoItemCard = ({
       p="lg"
       m="xs"
       className={isDragging ? classes.shaker : undefined}
+      data-testid={`todo-${item.id}`}
     >
       <Stack>
         <Text>{item.text}</Text>

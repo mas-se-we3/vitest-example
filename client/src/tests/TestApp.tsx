@@ -4,10 +4,14 @@ import { Routes } from '../Routes'
 
 const memoryRouter = createMemoryRouter(Routes)
 
-export const TestApp = () => {
+export const TestApp = ({
+  router,
+}: {
+  router?: ReturnType<typeof createMemoryRouter>
+}) => {
   return (
     <AppProviders>
-      <RouterProvider router={memoryRouter} />
+      <RouterProvider router={router ?? memoryRouter} />
     </AppProviders>
   )
 }

@@ -1,16 +1,35 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+  within,
+} from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
-import { afterAll, afterEach, beforeAll, expect, test, vitest } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vitest,
+} from 'vitest'
 import { ToDoItem } from '../model/ToDoItem'
 import { TestApp } from './TestApp'
+import { createMemoryRouter } from 'react-router-dom'
+import { Routes } from '../Routes'
 
 const postTodo = vitest.fn()
+const deleteTodo = vitest.fn()
+const putTodo = vitest.fn()
 
 const handlers = [
   http.get('/api/todos/pending', async () => {
-    return HttpResponse.json([])
+    return HttpResponse.json([{ id: 'id1', text: 'Todo1', state: 'pending' }])
   }),
   http.post('/api/todos', async req => {
     const json = (await req.request.json()) as Omit<ToDoItem, 'id'>
@@ -20,6 +39,19 @@ const handlers = [
       id: crypto.randomUUID(),
     })
   }),
+  http.delete('/api/todos/:id', async ({ params }) => {
+    const { id } = params
+    deleteTodo(id)
+    return new Response(null, { status: 204 })
+  }),
+  http.put('/api/todos', async req => {
+    const json = (await req.request.json()) as ToDoItem
+    putTodo(json)
+    return HttpResponse.json(json)
+  }),
+  http.get('/api/todos/completed', async () => {
+    return HttpResponse.json([])
+  }),
 ]
 
 const server = setupServer(...handlers)
@@ -28,45 +60,137 @@ beforeAll(() => server.listen())
 
 afterEach(() => {
   postTodo.mockReset()
+  deleteTodo.mockReset()
+  putTodo.mockReset()
   server.resetHandlers()
   cleanup()
 })
 
 afterAll(() => server.close())
 
-test('Adding items does correct API Call', async () => {
-  const user = userEvent.setup()
-  render(<TestApp />)
+describe('Pending Window', () => {
+  test('Adding items does correct API Call', async () => {
+    const user = userEvent.setup()
+    render(<TestApp />)
 
-  await user.click(screen.getByTestId('add-item'))
+    await user.click(screen.getByTestId('add-item'))
 
-  await user.type(
-    await screen.findByRole('textbox', { name: /todo/i }),
-    'TestInput',
-  )
+    await user.type(
+      await screen.findByRole('textbox', { name: /todo/i }),
+      'TestInput',
+    )
 
-  await user.click(screen.getByRole('button', { name: /add/i }))
+    await user.click(screen.getByRole('button', { name: /add/i }))
 
-  await waitFor(() =>
-    expect(postTodo).toHaveBeenCalledWith({
-      text: 'TestInput',
-      state: 'pending',
-    }),
-  )
-})
+    await waitFor(() =>
+      expect(postTodo).toHaveBeenCalledWith({
+        text: 'TestInput',
+        state: 'pending',
+      }),
+    )
+  })
 
-test('Adding items does show in UI', async () => {
-  const user = userEvent.setup()
-  render(<TestApp />)
+  test('Adding items does show in UI', async () => {
+    const user = userEvent.setup()
+    render(<TestApp />)
 
-  await user.click(screen.getByTestId('add-item'))
+    await user.click(screen.getByTestId('add-item'))
 
-  await user.type(
-    await screen.findByRole('textbox', { name: /todo/i }),
-    'TestInput',
-  )
+    await user.type(
+      await screen.findByRole('textbox', { name: /todo/i }),
+      'TestInput',
+    )
 
-  await user.click(screen.getByRole('button', { name: /add/i }))
+    await user.click(screen.getByRole('button', { name: /add/i }))
 
-  await waitFor(() => screen.findByText(/TestInput/))
+    await expect(
+      waitFor(() => screen.findByText(/TestInput/)),
+    ).resolves.toBeDefined()
+  })
+
+  test('Deleting items does correct API Call', async () => {
+    const user = userEvent.setup()
+    render(<TestApp />)
+
+    const todoItem = await screen.findByTestId('todo-id1')
+
+    const deleteButton = within(todoItem).getByRole('button', {
+      name: /delete/i,
+    })
+
+    await user.click(deleteButton)
+
+    await waitFor(() => expect(deleteTodo).toHaveBeenCalledWith('id1'))
+  })
+
+  test('Deleting items does remove from UI', async () => {
+    const user = userEvent.setup()
+    render(<TestApp />)
+
+    const todoItem = await screen.findByTestId('todo-id1')
+
+    const deleteButton = within(todoItem).getByRole('button', {
+      name: /delete/i,
+    })
+
+    // Intentionally don't wait for click to complete, we just wait for the element removal instead
+    user.click(deleteButton)
+
+    await expect(
+      waitForElementToBeRemoved(screen.queryByTestId('todo-id1')),
+    ).resolves.toBeUndefined()
+  })
+
+  test('Completing items does correct API Call', async () => {
+    const user = userEvent.setup()
+    render(<TestApp />)
+
+    const todoItem = await screen.findByTestId('todo-id1')
+
+    const completeButton = within(todoItem).getByRole('button', {
+      name: /complete/i,
+    })
+
+    await user.click(completeButton)
+
+    await waitFor(() =>
+      expect(putTodo).toHaveBeenCalledWith({
+        id: 'id1',
+        text: 'Todo1',
+        state: 'completed',
+      }),
+    )
+  })
+
+  test('Completing items does remove from UI', async () => {
+    const user = userEvent.setup()
+    render(<TestApp />)
+
+    const todoItem = await screen.findByTestId('todo-id1')
+
+    const completeButton = within(todoItem).getByRole('button', {
+      name: /complete/i,
+    })
+
+    // Intentionally don't wait for click to complete, we just wait for the element removal instead
+    user.click(completeButton)
+
+    await expect(
+      waitForElementToBeRemoved(screen.queryByTestId('todo-id1')),
+    ).resolves.toBeUndefined()
+  })
+
+  test('Going to completed changes routing', async () => {
+    const user = userEvent.setup()
+    const router = createMemoryRouter(Routes)
+    render(<TestApp router={router} />)
+
+    const toCompletedButton = await screen.findByRole('button', {
+      name: /to completed/i,
+    })
+
+    await user.click(toCompletedButton)
+
+    expect(router.state.location.pathname).toBe('/completed')
+  })
 })
