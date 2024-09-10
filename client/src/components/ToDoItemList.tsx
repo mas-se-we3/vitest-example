@@ -1,14 +1,14 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { Loader, Stack } from '@mantine/core'
 import { useListState } from '@mantine/hooks'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ApiResponse } from '../api'
 import { addNewTodo, deleteTodo, updateTodo } from '../api/todos'
 import { ToDoItem } from '../model/ToDoItem'
-import { ToDoItemCard } from './ToDoItemCard'
 import { CreateItemModal } from './CreateItemModal'
+import { ToDoItemCard } from './ToDoItemCard'
 
-export type ToDoItemListProps = {
+type Props = {
   getTodoItems: () => Promise<ApiResponse<ToDoItem[]>>
   showCreateModal: boolean
   closeCreateModal: () => void
@@ -18,8 +18,8 @@ export const ToDoItemList = ({
   getTodoItems,
   showCreateModal,
   closeCreateModal,
-}: ToDoItemListProps) => {
-  const [items, handler] = useListState<ToDoItem>([])
+}: Props) => {
+  const [items, { setState, ...handler }] = useListState<ToDoItem>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -27,47 +27,34 @@ export const ToDoItemList = ({
 
     getTodoItems()
       .then(r => {
-        if (!r.ok) {
-          return
-        }
-
-        handler.setState(r.data)
+        if (!r.ok) return
+        setState(r.data)
       })
       .finally(() => setLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getTodoItems])
+  }, [getTodoItems, setState])
 
-  const deleteItem = useCallback(
-    async (item: ToDoItem) => {
-      const result = await deleteTodo(item.id)
-      if (result.ok) {
-        handler.filter(t => t.id !== item.id)
-      }
-    },
-    [handler],
-  )
+  const deleteItem = async (item: ToDoItem) => {
+    const result = await deleteTodo(item.id)
+    if (result.ok) {
+      handler.filter(t => t.id !== item.id)
+    }
+  }
 
-  const setItemCompleted = useCallback(
-    async (item: ToDoItem) => {
-      const updatedItem: ToDoItem = { ...item, state: 'completed' }
+  const setItemCompleted = async (item: ToDoItem) => {
+    const updatedItem: ToDoItem = { ...item, state: 'completed' }
 
-      const result = await updateTodo(updatedItem)
-      if (result.ok) {
-        handler.filter(todo => todo.id !== result.data.id)
-      }
-    },
-    [handler],
-  )
+    const result = await updateTodo(updatedItem)
+    if (result.ok) {
+      handler.filter(todo => todo.id !== result.data.id)
+    }
+  }
 
-  const addItem = useCallback(
-    async (newItem: Omit<ToDoItem, 'id'>) => {
-      const result = await addNewTodo(newItem)
-      if (result.ok) {
-        handler.append(result.data)
-      }
-    },
-    [handler],
-  )
+  const addItem = async (newItem: Omit<ToDoItem, 'id'>) => {
+    const result = await addNewTodo(newItem)
+    if (result.ok) {
+      handler.append(result.data)
+    }
+  }
 
   if (loading) {
     return <Loader />

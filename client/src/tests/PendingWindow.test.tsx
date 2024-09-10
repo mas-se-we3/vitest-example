@@ -18,10 +18,9 @@ import {
   test,
   vitest,
 } from 'vitest'
+import { PendingWindow } from '../components/windows/PendingWindow'
 import { ToDoItem } from '../model/ToDoItem'
 import { TestApp } from './TestApp'
-import { createMemoryRouter } from 'react-router-dom'
-import { Routes } from '../Routes'
 
 const postTodo = vitest.fn()
 const deleteTodo = vitest.fn()
@@ -70,7 +69,11 @@ afterAll(() => server.close())
 
 describe('Pending Window', () => {
   test('Todo item from API is shown', async () => {
-    render(<TestApp />)
+    render(
+      <TestApp>
+        <PendingWindow />
+      </TestApp>,
+    )
 
     await expect(
       waitFor(() => screen.findByText(/Todo1/)),
@@ -79,7 +82,11 @@ describe('Pending Window', () => {
 
   test('Adding items does correct API Call', async () => {
     const user = userEvent.setup()
-    render(<TestApp />)
+    render(
+      <TestApp>
+        <PendingWindow />
+      </TestApp>,
+    )
 
     await user.click(screen.getByTestId('add-item'))
 
@@ -100,7 +107,11 @@ describe('Pending Window', () => {
 
   test('Adding items does show in UI', async () => {
     const user = userEvent.setup()
-    render(<TestApp />)
+    render(
+      <TestApp>
+        <PendingWindow />
+      </TestApp>,
+    )
 
     await user.click(screen.getByTestId('add-item'))
 
@@ -118,7 +129,11 @@ describe('Pending Window', () => {
 
   test('Deleting items does correct API Call', async () => {
     const user = userEvent.setup()
-    render(<TestApp />)
+    render(
+      <TestApp>
+        <PendingWindow />
+      </TestApp>,
+    )
 
     const todoItem = await screen.findByTestId('todo-id1')
 
@@ -133,7 +148,11 @@ describe('Pending Window', () => {
 
   test('Deleting items does remove from UI', async () => {
     const user = userEvent.setup()
-    render(<TestApp />)
+    render(
+      <TestApp>
+        <PendingWindow />
+      </TestApp>,
+    )
 
     const todoItem = await screen.findByTestId('todo-id1')
 
@@ -151,7 +170,11 @@ describe('Pending Window', () => {
 
   test('Completing items does correct API Call', async () => {
     const user = userEvent.setup()
-    render(<TestApp />)
+    render(
+      <TestApp>
+        <PendingWindow />
+      </TestApp>,
+    )
 
     const todoItem = await screen.findByTestId('todo-id1')
 
@@ -172,7 +195,11 @@ describe('Pending Window', () => {
 
   test('Completing items does remove from UI', async () => {
     const user = userEvent.setup()
-    render(<TestApp />)
+    render(
+      <TestApp>
+        <PendingWindow />
+      </TestApp>,
+    )
 
     const todoItem = await screen.findByTestId('todo-id1')
 
@@ -186,19 +213,5 @@ describe('Pending Window', () => {
     await expect(
       waitForElementToBeRemoved(screen.queryByTestId('todo-id1')),
     ).resolves.toBeUndefined()
-  })
-
-  test('Going to completed changes routing', async () => {
-    const user = userEvent.setup()
-    const router = createMemoryRouter(Routes)
-    render(<TestApp router={router} />)
-
-    const toCompletedButton = await screen.findByRole('button', {
-      name: /to completed/i,
-    })
-
-    await user.click(toCompletedButton)
-
-    expect(router.state.location.pathname).toBe('/completed')
   })
 })

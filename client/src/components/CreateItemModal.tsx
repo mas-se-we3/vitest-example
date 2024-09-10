@@ -1,18 +1,14 @@
 import { Button, Modal, Stack, Textarea } from '@mantine/core'
-import { ToDoItem } from '../model/ToDoItem'
 import { useState } from 'react'
+import { ToDoItem } from '../model/ToDoItem'
 
-export type CreateItemModal = {
+type Props = {
   show: boolean
   onClose: () => void
   onSuccess: (item: Omit<ToDoItem, 'id'>) => void
 }
 
-export const CreateItemModal = ({
-  onSuccess,
-  show,
-  onClose,
-}: CreateItemModal) => {
+export const CreateItemModal = ({ onSuccess, show, onClose }: Props) => {
   const [text, setText] = useState('')
 
   const onThisClose = () => {

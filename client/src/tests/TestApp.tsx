@@ -1,17 +1,19 @@
-import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { AppProviders } from '../AppProviders'
-import { Routes } from '../Routes'
 
-const memoryRouter = createMemoryRouter(Routes)
+type Props = {
+  // inject more initial data here
+  children: ReactNode
+}
 
-export const TestApp = ({
-  router,
-}: {
-  router?: ReturnType<typeof createMemoryRouter>
-}) => {
+export const TestApp = ({ children }: Props) => {
+  // set up state for testing here
+  // inject data into your providers
+
   return (
     <AppProviders>
-      <RouterProvider router={router ?? memoryRouter} />
+      <MemoryRouter>{children}</MemoryRouter>
     </AppProviders>
   )
 }

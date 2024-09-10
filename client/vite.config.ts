@@ -15,6 +15,6 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    setupFiles: 'src/tests/setup.ts',
+    setupFiles: 'src/tests/setup.ts', // this is for the mantine library, you do not have to setup anything for the project
   },
 })
