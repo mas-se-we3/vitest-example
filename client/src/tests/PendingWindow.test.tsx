@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/vitest'
 import {
   cleanup,
   render,
@@ -21,9 +22,9 @@ import {
 import { PendingWindow } from '../components/windows/PendingWindow'
 import { TestApp } from './TestApp'
 
-const postTodo = vitest.fn()
-const deleteTodo = vitest.fn()
-const putTodo = vitest.fn()
+const postTodoFn = vitest.fn()
+const deleteTodoFn = vitest.fn()
+const putTodoFn = vitest.fn()
 
 const handlers = [
   http.get('/api/todos/pending', async () => {
@@ -31,7 +32,7 @@ const handlers = [
   }),
   http.post('/api/todos', async req => {
     const json = (await req.request.json()) as object
-    postTodo(json)
+    postTodoFn(json)
     return HttpResponse.json({
       ...json,
       id: crypto.randomUUID(),
@@ -39,12 +40,12 @@ const handlers = [
   }),
   http.delete('/api/todos/:id', async ({ params }) => {
     const { id } = params
-    deleteTodo(id)
-    return new Response(null, { status: 204 })
+    deleteTodoFn(id)
+    return new HttpResponse(null, { status: 204 })
   }),
   http.put('/api/todos/:id', async req => {
     const json = await req.request.json()
-    putTodo(json)
+    putTodoFn(json)
     return HttpResponse.json(json)
   }),
   http.get('/api/todos/completed', async () => {
@@ -57,10 +58,9 @@ const server = setupServer(...handlers)
 beforeAll(() => server.listen())
 
 afterEach(() => {
-  postTodo.mockReset()
-  deleteTodo.mockReset()
-  putTodo.mockReset()
-  server.resetHandlers()
+  postTodoFn.mockReset()
+  deleteTodoFn.mockReset()
+  putTodoFn.mockReset()
   cleanup()
 })
 
@@ -74,9 +74,9 @@ describe('Pending Window', () => {
       </TestApp>,
     )
 
-    await expect(
-      waitFor(() => screen.findByText(/Todo1/)),
-    ).resolves.toBeDefined()
+    const todo1 = await screen.findByText(/Todo1/)
+
+    expect(todo1).toBeInTheDocument()
   })
 
   test('Adding items does correct API Call', async () => {
@@ -89,15 +89,14 @@ describe('Pending Window', () => {
 
     await user.click(screen.getByTestId('add-item'))
 
-    await user.type(
-      await screen.findByRole('textbox', { name: /todo/i }),
-      'TestInput',
-    )
+    const todoTextbox = await screen.findByRole('textbox', { name: /todo/i })
+
+    await user.type(todoTextbox, 'TestInput')
 
     await user.click(screen.getByRole('button', { name: /add/i }))
 
     await waitFor(() =>
-      expect(postTodo).toHaveBeenCalledWith({
+      expect(postTodoFn).toHaveBeenCalledWith({
         text: 'TestInput',
         state: 'pending',
       }),
@@ -114,16 +113,15 @@ describe('Pending Window', () => {
 
     await user.click(screen.getByTestId('add-item'))
 
-    await user.type(
-      await screen.findByRole('textbox', { name: /todo/i }),
-      'TestInput',
-    )
+    const todoTextBox = await screen.findByRole('textbox', { name: /todo/i })
+
+    await user.type(todoTextBox, 'TestInput')
 
     await user.click(screen.getByRole('button', { name: /add/i }))
 
-    await expect(
-      waitFor(() => screen.findByText(/TestInput/)),
-    ).resolves.toBeDefined()
+    const testInput = await screen.findByText(/TestInput/)
+
+    expect(testInput).toBeInTheDocument()
   })
 
   test('Deleting items does correct API Call', async () => {
@@ -142,7 +140,9 @@ describe('Pending Window', () => {
 
     await user.click(deleteButton)
 
-    await waitFor(() => expect(deleteTodo).toHaveBeenCalledWith('id1'))
+    await waitFor(() => {
+      expect(deleteTodoFn).toHaveBeenCalledWith('id1')
+    })
   })
 
   test('Deleting items does remove from UI', async () => {
@@ -162,9 +162,9 @@ describe('Pending Window', () => {
     // Intentionally don't wait for click to complete, we just wait for the element removal instead
     user.click(deleteButton)
 
-    await expect(
-      waitForElementToBeRemoved(screen.queryByTestId('todo-id1')),
-    ).resolves.toBeUndefined()
+    await waitForElementToBeRemoved(todoItem)
+
+    expect(todoItem).not.toBeInTheDocument()
   })
 
   test('Completing items does correct API Call', async () => {
@@ -183,13 +183,13 @@ describe('Pending Window', () => {
 
     await user.click(completeButton)
 
-    await waitFor(() =>
-      expect(putTodo).toHaveBeenCalledWith({
+    await waitFor(() => {
+      expect(putTodoFn).toHaveBeenCalledWith({
         id: 'id1',
         text: 'Todo1',
         state: 'completed',
-      }),
-    )
+      })
+    })
   })
 
   test('Completing items does remove from UI', async () => {
@@ -206,11 +206,10 @@ describe('Pending Window', () => {
       name: /complete/i,
     })
 
-    // Intentionally don't wait for click to complete, we just wait for the element removal instead
     user.click(completeButton)
 
-    await expect(
-      waitForElementToBeRemoved(screen.queryByTestId('todo-id1')),
-    ).resolves.toBeUndefined()
+    await waitForElementToBeRemoved(todoItem)
+
+    expect(completeButton).not.toBeInTheDocument()
   })
 })

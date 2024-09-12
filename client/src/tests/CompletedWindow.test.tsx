@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/vitest'
 import {
   cleanup,
   render,
@@ -56,9 +57,9 @@ describe('Completed Window', () => {
       </TestApp>,
     )
 
-    await expect(
-      waitFor(() => screen.findByText(/Todo1/)),
-    ).resolves.toBeDefined()
+    const todoItem = await screen.findByText(/Todo1/)
+
+    expect(todoItem).toBeDefined()
   })
 
   test('Deleting items does correct API Call', async () => {
@@ -77,7 +78,9 @@ describe('Completed Window', () => {
 
     await user.click(deleteButton)
 
-    await waitFor(() => expect(deleteTodo).toHaveBeenCalledWith('id1'))
+    await waitFor(() => {
+      expect(deleteTodo).toHaveBeenCalledWith('id1')
+    })
   })
 
   test('Deleting items does remove from UI', async () => {
@@ -94,11 +97,10 @@ describe('Completed Window', () => {
       name: /delete/i,
     })
 
-    // Intentionally don't wait for click to complete, we just wait for the element removal instead
     user.click(deleteButton)
 
-    await expect(
-      waitForElementToBeRemoved(screen.queryByTestId('todo-id1')),
-    ).resolves.toBeUndefined()
+    await waitForElementToBeRemoved(todoItem)
+
+    expect(todoItem).not.toBeInTheDocument()
   })
 })
