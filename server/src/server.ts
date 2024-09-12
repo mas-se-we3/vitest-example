@@ -30,7 +30,7 @@ app.delete('/api/todos/:id', (req, res) => {
   res.sendStatus(204)
 })
 
-app.put('/api/todos', (req, res) => {
+app.put('/api/todos/:id', (req, res) => {
   res.send(updateTodoItem(req.body))
 })
 

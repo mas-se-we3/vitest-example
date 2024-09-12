@@ -101,21 +101,4 @@ describe('Completed Window', () => {
       waitForElementToBeRemoved(screen.queryByTestId('todo-id1')),
     ).resolves.toBeUndefined()
   })
-
-  test('Going to pending changes routing', async () => {
-    const user = userEvent.setup()
-    render(
-      <TestApp>
-        <CompletedWindow />
-      </TestApp>,
-    )
-
-    const toCompletedButton = await screen.findByRole('button', {
-      name: /to pending/i,
-    })
-
-    await user.click(toCompletedButton)
-
-    // expect(completedRouter.state.location.pathname).toBe('/')
-  })
 })

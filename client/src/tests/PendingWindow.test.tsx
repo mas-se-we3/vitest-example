@@ -19,7 +19,6 @@ import {
   vitest,
 } from 'vitest'
 import { PendingWindow } from '../components/windows/PendingWindow'
-import { ToDoItem } from '../model/ToDoItem'
 import { TestApp } from './TestApp'
 
 const postTodo = vitest.fn()
@@ -31,7 +30,7 @@ const handlers = [
     return HttpResponse.json([{ id: 'id1', text: 'Todo1', state: 'pending' }])
   }),
   http.post('/api/todos', async req => {
-    const json = (await req.request.json()) as Omit<ToDoItem, 'id'>
+    const json = (await req.request.json()) as object
     postTodo(json)
     return HttpResponse.json({
       ...json,
@@ -43,8 +42,8 @@ const handlers = [
     deleteTodo(id)
     return new Response(null, { status: 204 })
   }),
-  http.put('/api/todos', async req => {
-    const json = (await req.request.json()) as ToDoItem
+  http.put('/api/todos/:id', async req => {
+    const json = await req.request.json()
     putTodo(json)
     return HttpResponse.json(json)
   }),

@@ -36,7 +36,7 @@ export const deleteTodo = async (
 export const updateTodo = async (
   item: ToDoItem,
 ): Promise<ApiResponse<ToDoItem>> => {
-  const respones = await fetch('/api/todos', {
+  const respones = await fetch(`/api/todos/${item.id}`, {
     method: 'PUT',
     headers: {
       'content-type': 'application/json',
